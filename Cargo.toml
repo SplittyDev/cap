@@ -2,6 +2,9 @@
 name = "capm"
 version = "0.3.2"
 edition = "2021"
+description = "A CLI tool to manage your binary crates"
+authors = ["Marco Quinten <splittydev@pm.me>"]
+license = "MIT"
 
 [[bin]]
 name = "cap"
