@@ -13,7 +13,7 @@ fn run_with_progress(command: &mut Command, message: String) -> anyhow::Result<(
     // Create progress bar
     let progress_bar = ProgressBar::new_spinner();
     progress_bar.set_message(message);
-    progress_bar.enable_steady_tick(Duration::from_millis(10));
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     // Spawn command
     let mut child = command.spawn()?;
