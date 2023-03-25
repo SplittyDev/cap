@@ -40,6 +40,16 @@ cap update <package>
 cap update
 ```
 
+**Check a package for updates**
+```
+cap check <package>
+```
+
+**Check all packages for updates**
+```
+cap check
+```
+
 **List all installed packages**
 ```
 cap list

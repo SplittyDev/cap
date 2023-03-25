@@ -2,14 +2,14 @@ use owo_colors::OwoColorize;
 
 use crate::{CratesRegistry, Package, PackageTree};
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum PackageStatus {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PackageStatus {
     UpToDate,
     OutOfDate,
 }
 
-#[derive(Debug)]
-struct PackageWithStatus<'a> {
+#[derive(Debug, Clone)]
+pub struct PackageWithStatus<'a> {
     package: &'a Package,
     status: PackageStatus,
     latest_version: Option<semver::Version>,
@@ -47,34 +47,49 @@ impl<'a> PackageUpdater<'a> {
         Self { registry, packages }
     }
 
-    pub fn update_package(&self, package_name: impl AsRef<str>) -> anyhow::Result<()> {
+    pub fn check_package(
+        &self,
+        package_name: impl AsRef<str>,
+    ) -> anyhow::Result<Option<PackageWithStatus>> {
         let Some(local_package) = self.packages.get(&package_name) else {
             println!("Package {} is {}.", package_name.as_ref().blue(), "not installed".red());
-            return Ok(());
+            return Ok(None);
         };
+
         let Ok(latest_version) = self.registry.get_latest_version(local_package.name()) else {
             println!("Package {} is {}.", local_package.name().blue(), "not available on crates.io".red());
-            return Ok(());
+            return Ok(None);
         };
+
         if latest_version <= *local_package.version() {
             println!(
                 "Package {} is {}.",
                 local_package.name().blue(),
                 "up to date".green()
             );
-            return Ok(());
+            return Ok(Some(PackageWithStatus::new(
+                local_package,
+                PackageStatus::UpToDate,
+                None,
+            )));
         }
+
         println!(
-            "Updating {} from {} to {}...",
+            "Package {} is {}. Current version: {}. Latest version: {}.",
             local_package.name().blue(),
+            "out of date".yellow(),
             local_package.version().bright_black(),
-            latest_version.green()
+            latest_version.to_string().green(),
         );
-        crate::cargo::update_package(local_package.name(), latest_version)?;
-        Ok(())
+
+        Ok(Some(PackageWithStatus::new(
+            local_package,
+            PackageStatus::OutOfDate,
+            Some(latest_version),
+        )))
     }
 
-    pub fn update_all_packages(&self) -> anyhow::Result<()> {
+    pub fn check_all_packages(&self) -> anyhow::Result<Option<Vec<PackageWithStatus>>> {
         // Gather package status for each installed package.
         let statuses = self.get_package_statuses();
         let outdated_packages = statuses
@@ -86,7 +101,7 @@ impl<'a> PackageUpdater<'a> {
         // Check if all packages are up to date.
         if outdated_packages.is_empty() {
             println!("All packages are {}.", "up to date".green());
-            return Ok(());
+            return Ok(None);
         }
 
         // Print out-of-date packages.
@@ -104,18 +119,91 @@ impl<'a> PackageUpdater<'a> {
             );
         }
 
-        // Update packages.
-        println!("Updating {} packages...", outdated_packages.len());
-        for package in &outdated_packages {
-            let package_name = package.package().name();
-            let latest_version = package.latest_version.clone().unwrap();
-            println!(
-                "Updating {} from {} to {}...",
-                package_name.blue(),
-                package.package().version().bright_black(),
-                latest_version.green()
-            );
-            crate::cargo::update_package(package.package().name(), latest_version)?;
+        Ok(Some(
+            outdated_packages.into_iter().cloned().collect::<Vec<_>>(),
+        ))
+    }
+
+    pub fn update_package(&self, package_name: impl AsRef<str>) -> anyhow::Result<()> {
+        let Ok(Some(package)) = self.check_package(package_name) else {
+            return Ok(());
+        };
+
+        let local_package = package.package();
+        let latest_version = package.latest_version.unwrap();
+
+        match crate::cargo::update_package(
+            local_package.name(),
+            local_package.version().clone(),
+            latest_version.clone(),
+        ) {
+            Ok(_) => {
+                println!(
+                    "{} {} from {} to {}.",
+                    "Updated".green(),
+                    local_package.name().blue(),
+                    local_package.version().bright_black(),
+                    latest_version.green(),
+                );
+            }
+            Err(err) => {
+                println!(
+                    "{} to update package {}.",
+                    "Failed".red(),
+                    local_package.name().blue(),
+                );
+                println!(
+                    "You may need to run {}.",
+                    format!("cap update --locked {}", local_package.name()).bright_black()
+                );
+                return Err(err);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn update_all_packages(&self) -> anyhow::Result<()> {
+        // Gather package status for each installed package.
+        let Ok(Some(outdated_packages)) = self.check_all_packages() else {
+            return Ok(());
+        };
+
+        println!(
+            "{} {} {}...",
+            "Updating".green(),
+            outdated_packages.len(),
+            crate::helper::pluralize("package", "packages", outdated_packages.len())
+        );
+
+        for package_with_status in &outdated_packages {
+            let package_name = package_with_status.package().name();
+            let local_version = package_with_status.package().version();
+            let latest_version = package_with_status.latest_version.clone().unwrap();
+
+            match crate::cargo::update_package(
+                package_name,
+                local_version.clone(),
+                latest_version.clone(),
+            ) {
+                Ok(_) => {
+                    println!(
+                        "{} {} from {} to {}.",
+                        "Updated".green(),
+                        package_name.blue(),
+                        local_version.bright_black(),
+                        latest_version.green(),
+                    );
+                }
+                Err(err) => {
+                    println!(
+                        "{} to update package {}.",
+                        "Failed".red(),
+                        package_name.blue(),
+                    );
+                    return Err(err);
+                }
+            }
         }
 
         Ok(())

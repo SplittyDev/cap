@@ -1,5 +1,6 @@
 mod cargo;
 mod crates;
+mod helper;
 mod local_crates;
 mod package_installer;
 mod package_updater;
@@ -21,12 +22,22 @@ enum Commands {
         locked: bool,
         #[clap(short = 'f', long = "forced", action, help = "Force installation")]
         forced: bool,
-        #[clap(short = 'n', long = "nightly", action, help = "Use a nightly toolchain")]
+        #[clap(
+            short = 'n',
+            long = "nightly",
+            action,
+            help = "Use a nightly toolchain"
+        )]
         nightly: bool,
     },
     #[clap(name = "update", about = "Update installed packages")]
     Update {
         #[clap(name = "package", action, help = "Update a specific package")]
+        package: Option<String>,
+    },
+    #[clap(name = "check", about = "Check for updates")]
+    Check {
+        #[clap(name = "package", action, help = "Check a specific package")]
         package: Option<String>,
     },
     #[clap(name = "uninstall", about = "Remove a package")]
@@ -69,6 +80,17 @@ fn main() -> anyhow::Result<()> {
             let packages = PackageTree::build()?;
             let installer = PackageInstaller::new(&registry, &packages);
             installer.uninstall_package(package)?;
+        }
+
+        Commands::Check { package } => {
+            let packages = PackageTree::build()?;
+            let updater = PackageUpdater::new(&registry, &packages);
+
+            if let Some(target_package) = package {
+                updater.check_package(target_package)?;
+            } else {
+                updater.check_all_packages()?;
+            }
         }
 
         Commands::Update {

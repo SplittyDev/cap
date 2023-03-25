@@ -1,6 +1,6 @@
 [package]
 name = "capm"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [[bin]]
@@ -14,10 +14,12 @@ anyhow = "1.0.70"
 clap = { version = "4.1.13", features = ["derive"] }
 crates-index = "0.19.7"
 home = "0.5.4"
+indicatif = "0.17.3"
 log = "0.4.17"
 owo-colors = "3.5.0"
 rayon = "1.7.0"
 regex = "1.7.2"
 semver = "1.0.17"
 serde = { version = "1.0.158", features = ["derive"] }
+spinners = "4.1.0"
 toml = "0.7.3"

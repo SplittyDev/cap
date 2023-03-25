@@ -37,13 +37,31 @@ impl<'a> PackageInstaller<'a> {
             return Ok(());
         };
 
-        println!(
-            "Installing package {} {}.",
-            package_name.blue(),
-            latest_version.to_string()
-        );
-
-        crate::cargo::install_package(package_name, locked, forced, nightly)?;
+        match crate::cargo::install_package(
+            package_name,
+            latest_version.clone(),
+            locked,
+            forced,
+            nightly,
+        ) {
+            Ok(_) => {
+                println!(
+                    "{} {} {}.",
+                    "Installed".green(),
+                    package_name.blue(),
+                    latest_version.to_string().bright_black(),
+                );
+            }
+            Err(err) => {
+                println!(
+                    "{} to install package {} {}.",
+                    "Failed".red(),
+                    package_name.blue(),
+                    latest_version.to_string().bright_black()
+                );
+                return Err(err);
+            }
+        }
 
         Ok(())
     }
@@ -59,7 +77,7 @@ impl<'a> PackageInstaller<'a> {
         println!(
             "Uninstalling package {} {}.",
             package_name.blue(),
-            local_package.version().to_string().green()
+            local_package.version().to_string().bright_black()
         );
 
         crate::cargo::uninstall_package(package_name)?;
