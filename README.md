@@ -1,13 +1,9 @@
-# Crates Package Manager
+# Rust Binary Package Manager
 > A binary package manager built on top of [crates.io](https://crates.io).
-
-This is a work in progress.
 
 ## Why
 
-Rust already has an amazing package manager: `cargo`. However, cargo is mostly a dependency manager for Rust projects. It is not primarily a binary package manager.
-
-Even though you can install binary crates with cargo, updating and maintaining them properly requires third-party solutions such as `cargo-update`.
+Rust already has an amazing package manager: cargo. However, cargo is mostly a dependency manager for Rust projects. It is not primarily a binary package manager. Even though you can install binary crates with cargo, updating and maintaining them properly requires third-party solutions such as the cargo-update plugin.
 
 This project aims to provide a simple, easy to use, and reliable binary package manager for Rust.
 
@@ -15,6 +11,17 @@ This project aims to provide a simple, easy to use, and reliable binary package 
 
 ```
 cargo install capm --locked
+```
+
+**Or install from main branch**
+```
+cargo install --locked --git https://github.com/splittydev/cap
+```
+
+**Or install from source**
+```
+git clone https://github.com/splittydev/cap
+cargo install --locked --path ./cap
 ```
 
 ## Usage
