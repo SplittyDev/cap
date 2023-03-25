@@ -1,0 +1,19 @@
+[package]
+name = "cap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.70"
+clap = { version = "4.1.13", features = ["derive"] }
+crates-index = "0.19.7"
+home = "0.5.4"
+log = "0.4.17"
+owo-colors = "3.5.0"
+rayon = "1.7.0"
+regex = "1.7.2"
+semver = "1.0.17"
+serde = { version = "1.0.158", features = ["derive"] }
+toml = "0.7.3"
