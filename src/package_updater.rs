@@ -1,5 +1,3 @@
-use std::process::Command;
-
 use owo_colors::OwoColorize;
 
 use crate::{CratesRegistry, Package, PackageTree};
@@ -72,7 +70,7 @@ impl<'a> PackageUpdater<'a> {
             local_package.version().bright_black(),
             latest_version.green()
         );
-        self.internal_update_package(local_package, latest_version)?;
+        crate::cargo::update_package(local_package.name(), latest_version)?;
         Ok(())
     }
 
@@ -117,7 +115,7 @@ impl<'a> PackageUpdater<'a> {
                 package.package().version().bright_black(),
                 latest_version.green()
             );
-            self.internal_update_package(package.package(), latest_version)?;
+            crate::cargo::update_package(package.package().name(), latest_version)?;
         }
 
         Ok(())
@@ -150,21 +148,5 @@ impl<'a> PackageUpdater<'a> {
             .map(|package| package.package().name().chars().count())
             .max()
             .unwrap_or(0)
-    }
-
-    fn internal_update_package(
-        &self,
-        package: &Package,
-        target_version: semver::Version,
-    ) -> anyhow::Result<()> {
-        Command::new("cargo")
-            .arg("install")
-            .arg("--force")
-            .arg("--version")
-            .arg(target_version.to_string())
-            .arg(package.name())
-            .spawn()?
-            .wait_with_output()?;
-        Ok(())
     }
 }

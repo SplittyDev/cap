@@ -1,18 +1,27 @@
+mod cargo;
 mod crates;
 mod local_crates;
+mod package_installer;
 mod package_updater;
 
 use clap::{Parser, Subcommand};
 
 use crates::CratesRegistry;
 use local_crates::{Package, PackageFormatting, PackageTree};
+use package_installer::PackageInstaller;
 use package_updater::PackageUpdater;
 
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[clap(name = "install", alias = "i", about = "Install a package")]
     Install {
-        #[clap(long, action, help = "Use a nightly toolchain")]
+        #[clap(name = "package", action, help = "The package to be installed")]
+        package: String,
+        #[clap(short = 'l', long = "locked", action, help = "Use crate lockfile")]
+        locked: bool,
+        #[clap(short = 'f', long = "forced", action, help = "Force installation")]
+        forced: bool,
+        #[clap(short = 'n', long = "nightly", action, help = "Use a nightly toolchain")]
         nightly: bool,
     },
     #[clap(name = "update", about = "Update installed packages")]
@@ -21,7 +30,10 @@ enum Commands {
         package: Option<String>,
     },
     #[clap(name = "uninstall", about = "Remove a package")]
-    Uninstall {},
+    Uninstall {
+        #[clap(name = "package", action, help = "The package to be uninstalled")]
+        package: String,
+    },
     #[clap(name = "list", about = "List installed packages")]
     List {
         #[clap(short, long, action, help = "More compact output")]
@@ -31,6 +43,7 @@ enum Commands {
 
 #[derive(Debug, Parser)]
 #[clap(name = "cap")]
+#[command(author, version, about, long_about = None)]
 struct App {
     #[clap(subcommand)]
     command: Commands,
@@ -41,12 +54,21 @@ fn main() -> anyhow::Result<()> {
     let registry = CratesRegistry::new();
 
     match app.command {
-        Commands::Install { nightly: _nightly } => {
-            todo!("Installing packages is not yet implemented.")
+        Commands::Install {
+            package,
+            locked,
+            forced,
+            nightly,
+        } => {
+            let packages = PackageTree::build()?;
+            let installer = PackageInstaller::new(&registry, &packages);
+            installer.install_package(package, locked, forced, nightly)?;
         }
 
-        Commands::Uninstall {} => {
-            todo!("Uninstalling packages is not yet implemented.")
+        Commands::Uninstall { package } => {
+            let packages = PackageTree::build()?;
+            let installer = PackageInstaller::new(&registry, &packages);
+            installer.uninstall_package(package)?;
         }
 
         Commands::Update {
