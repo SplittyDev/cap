@@ -75,7 +75,7 @@ impl<'a> PackageUpdater<'a> {
         }
 
         println!(
-            "Package {} is {}. Current version: {}. Latest version: {}.",
+            "Package {} is {} ({} -> {}).",
             local_package.name().blue(),
             "out of date".yellow(),
             local_package.version().bright_black(),
