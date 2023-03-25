@@ -1,7 +1,15 @@
 # Crates Package Manager
-> A global package manager built on top of cargo and crates.io.
+> A binary package manager built on top of [crates.io](https://crates.io).
 
 This is a work in progress.
+
+## Why
+
+Rust already has an amazing package manager: `cargo`. However, cargo is mostly a dependency manager for Rust projects. It is not primarily a binary package manager.
+
+Even though you can install binary crates with cargo, updating and maintaining them properly requires third-party solutions such as `cargo-update`.
+
+This project aims to provide a simple, easy to use, and reliable binary package manager for Rust.
 
 ## Installation
 
