@@ -1,5 +1,5 @@
 # Rust Binary Package Manager
-> A binary package manager built on top of [crates.io](https://crates.io).
+> A binary package manager built on top of [crates.io](https://crates.io). No 🧢.
 
 [![asciicast](https://asciinema.org/a/RY04jcoHZ8eTCYbWJ6YL1Z2Gh.svg)](https://asciinema.org/a/RY04jcoHZ8eTCYbWJ6YL1Z2Gh)
 
