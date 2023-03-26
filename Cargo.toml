@@ -5,6 +5,7 @@ edition = "2021"
 description = "A CLI tool to manage your binary crates"
 authors = ["Marco Quinten <splittydev@pm.me>"]
 license = "MIT"
+repository = "https://github.com/splittydev/cap"
 
 [[bin]]
 name = "cap"
