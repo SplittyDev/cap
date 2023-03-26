@@ -9,7 +9,8 @@ mod local_crates;
 mod package_installer;
 mod package_updater;
 
-use crates::CratesRegistry;
+use crates::{CratesIoClient, CratesRegistry};
+use crates_index::DependencyKind;
 use local_crates::{Package, PackageFormatting, PackageTree};
 use owo_colors::OwoColorize;
 use package_installer::PackageInstaller;
@@ -56,6 +57,11 @@ enum Commands {
     #[clap(name = "search", about = "Search for packages")]
     Search {
         #[clap(name = "package", action, help = "Package regex")]
+        package: String,
+    },
+    #[clap(name = "info", about = "Show package info")]
+    Info {
+        #[clap(name = "package", action, help = "Package name")]
         package: String,
     },
 }
@@ -157,6 +163,123 @@ fn main() -> anyhow::Result<()> {
                     .trim()
                     .to_string();
                 println!("{}", package_text);
+            }
+        }
+
+        Commands::Info { package } => {
+            let mut client = CratesIoClient::new();
+            let progress_bar = indicatif::ProgressBar::new_spinner();
+            progress_bar.set_message("Fetching package info...");
+            progress_bar.enable_steady_tick(Duration::from_millis(100));
+            let package_1 = registry.get_crate(&package)?;
+            let package_2 = client.get_package_info(package)?;
+            progress_bar.finish_and_clear();
+
+            let Some(highest_version) = package_1.highest_normal_version() else {
+                println!("Unable to find any suitable version for package {}.", package_1.name().blue());
+                return Ok(())
+            };
+
+            // Print package name and version
+            println!(
+                "{} {}",
+                highest_version.name(),
+                highest_version.version().bright_black()
+            );
+
+            // Print description
+            if let Some(description) = package_2.description {
+                if let Ok((terminal_width, _)) = termion::terminal_size() {
+                    let description =
+                        textwrap::fill(&description, terminal_width.saturating_sub(4) as usize);
+                    println!("  Description");
+                    println!(
+                        "    {}",
+                        description
+                            .lines()
+                            .collect::<Vec<_>>()
+                            .join("\n    ")
+                            .bright_black()
+                    );
+                }
+            }
+
+            let yanked_version_count = package_1
+                .versions()
+                .into_iter()
+                .filter(|version| version.is_yanked())
+                .count();
+
+            // Print version count
+            println!(
+                "  {} published versions ({} yanked)",
+                package_1.versions().len().cyan(),
+                yanked_version_count.cyan()
+            );
+
+            // Print dependency count
+            println!(
+                "  {} {}",
+                highest_version.dependencies().len().cyan(),
+                helper::pluralize(
+                    "dependency",
+                    "dependencies",
+                    highest_version.dependencies().len()
+                )
+            );
+
+            // Sort dependencies by name and kind
+            let sorted_dependencies = {
+                let mut deps = highest_version.dependencies().to_vec();
+                deps.sort_unstable_by_key(|dep| dep.crate_name().to_string());
+                deps.sort_by(|a, b| {
+                    use std::cmp::Ordering;
+                    match (a.kind(), b.kind()) {
+                        (a, b) if a == b => Ordering::Equal,
+                        (DependencyKind::Normal, _) => Ordering::Less,
+                        (DependencyKind::Dev, DependencyKind::Build) => Ordering::Less,
+                        _ => Ordering::Greater,
+                    }
+                });
+                deps
+            };
+
+            // Print dependencies
+            for dependency in sorted_dependencies {
+                println!(
+                    "    {kind}{crate_name} {version_req}",
+                    kind = match dependency.kind() {
+                        DependencyKind::Normal => "",
+                        DependencyKind::Dev => "dev ",
+                        DependencyKind::Build => "build ",
+                    }
+                    .magenta(),
+                    crate_name = dependency.crate_name(),
+                    version_req = dependency.requirement().bright_black(),
+                );
+            }
+
+            // Print feature count
+            println!(
+                "  {} {}",
+                highest_version.features().len().cyan(),
+                helper::pluralize("feature", "features", highest_version.features().len())
+            );
+
+            // Sort features by name
+            let sorted_features = {
+                let mut feats = highest_version.features().into_iter().collect::<Vec<_>>();
+                feats.sort_by_key(|(name, _)| name.to_string());
+                feats
+            };
+
+            // Print features
+            for (feature_name, sub_features) in sorted_features {
+                println!(
+                    "    {name} = [{flags}]",
+                    name = feature_name,
+                    flags = sub_features.join(", ").bright_black(),
+                );
             }
         }
     }

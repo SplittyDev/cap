@@ -50,6 +50,7 @@ impl CratesRegistry {
             .context(format!("Failed to parse version of crate: {}", crate_name))
     }
 
+    /// Search for crates that match a regex.
     pub fn search(&self, crate_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Vec<Package>> {
         let regex = Regex::new(crate_name.into().as_ref())?;
         Ok(self
@@ -67,6 +68,13 @@ impl CratesRegistry {
                     })
             })
             .collect())
+    }
+
+    pub fn get_crate(&self, crate_name: impl AsRef<str>) -> anyhow::Result<crates_index::Crate> {
+        let crate_name = crate_name.as_ref();
+        self.index
+            .crate_(crate_name)
+            .context(format!("Failed to find crate on crates.io: {}", crate_name))
     }
 }
 
