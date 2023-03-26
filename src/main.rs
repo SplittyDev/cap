@@ -206,7 +206,7 @@ fn main() -> anyhow::Result<()> {
 
             let yanked_version_count = package_1
                 .versions()
-                .into_iter()
+                .iter()
                 .filter(|version| version.is_yanked())
                 .count();
 
@@ -268,7 +268,7 @@ fn main() -> anyhow::Result<()> {
 
             // Sort features by name
             let sorted_features = {
-                let mut feats = highest_version.features().into_iter().collect::<Vec<_>>();
+                let mut feats = highest_version.features().iter().collect::<Vec<_>>();
                 feats.sort_by_key(|(name, _)| name.to_string());
                 feats
             };

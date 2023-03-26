@@ -62,10 +62,7 @@ impl CratesRegistry {
                     .is_match(crate_.name())
                     .then(|| crate_.highest_normal_version())
                     .flatten()
-                    .and_then(|version| semver::Version::parse(version.version()).ok())
-                    .and_then(|version| {
-                        Some(Package::new(crate_.name().to_string(), version, vec![]))
-                    })
+                    .and_then(|version| semver::Version::parse(version.version()).ok()).map(|version| Package::new(crate_.name().to_string(), version, vec![]))
             })
             .collect())
     }
