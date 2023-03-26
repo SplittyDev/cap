@@ -1,3 +1,7 @@
+use std::time::Duration;
+
+use clap::{Parser, Subcommand};
+
 mod cargo;
 mod crates;
 mod helper;
@@ -5,10 +9,9 @@ mod local_crates;
 mod package_installer;
 mod package_updater;
 
-use clap::{Parser, Subcommand};
-
 use crates::CratesRegistry;
 use local_crates::{Package, PackageFormatting, PackageTree};
+use owo_colors::OwoColorize;
 use package_installer::PackageInstaller;
 use package_updater::PackageUpdater;
 
@@ -49,6 +52,11 @@ enum Commands {
     List {
         #[clap(short, long, action, help = "More compact output")]
         short: bool,
+    },
+    #[clap(name = "search", about = "Search for packages")]
+    Search {
+        #[clap(name = "package", action, help = "Package regex")]
+        package: String,
     },
 }
 
@@ -114,6 +122,42 @@ fn main() -> anyhow::Result<()> {
                 PackageFormatting::Long
             };
             packages.print(formatting);
+        }
+
+        Commands::Search { package } => {
+            let progress_bar = indicatif::ProgressBar::new_spinner();
+            progress_bar.set_message("Searching for packages...");
+            progress_bar.enable_steady_tick(Duration::from_millis(100));
+            let packages = registry.search(package)?;
+            let local_packages = PackageTree::build()?;
+            progress_bar.finish_and_clear();
+            for package in packages {
+                let primary_text = format!(
+                    "{} {}",
+                    package.name().blue(),
+                    package.version().bright_black()
+                );
+                let secondary_text = {
+                    if let Some(local_package) = local_packages.get(package.name()) {
+                        if local_package.version() == package.version() {
+                            format!("({}, {})", "installed".cyan(), "up to date".green())
+                        } else {
+                            format!(
+                                "({} {}: {})",
+                                "installed".cyan(),
+                                "out of date".yellow(),
+                                package.version()
+                            )
+                        }
+                    } else {
+                        String::default()
+                    }
+                };
+                let package_text = format!("{} {}", primary_text, secondary_text)
+                    .trim()
+                    .to_string();
+                println!("{}", package_text);
+            }
         }
     }
 

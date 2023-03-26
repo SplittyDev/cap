@@ -1,5 +1,11 @@
+use std::borrow::Cow;
+
 use anyhow::Context;
 use crates_index::Index;
+use rayon::prelude::ParallelIterator;
+use regex::Regex;
+
+use crate::Package;
 
 // const CRATES_IO_SPARSE_INDEX_URL: &str = "sparse+https://index.crates.io/";
 
@@ -42,6 +48,25 @@ impl CratesRegistry {
             .unwrap_or_else(|| crate_.highest_version());
         semver::Version::parse(latest_version.version())
             .context(format!("Failed to parse version of crate: {}", crate_name))
+    }
+
+    pub fn search(&self, crate_name: impl Into<Cow<'static, str>>) -> anyhow::Result<Vec<Package>> {
+        let regex = Regex::new(crate_name.into().as_ref())?;
+        Ok(self
+            .index
+            .crates_parallel()
+            .flatten()
+            .filter_map(|crate_| {
+                regex
+                    .is_match(crate_.name())
+                    .then(|| crate_.highest_normal_version())
+                    .flatten()
+                    .and_then(|version| semver::Version::parse(version.version()).ok())
+                    .and_then(|version| {
+                        Some(Package::new(crate_.name().to_string(), version, vec![]))
+                    })
+            })
+            .collect())
     }
 }
 
