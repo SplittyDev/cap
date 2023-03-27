@@ -35,6 +35,10 @@ impl<'a> PackageWithStatus<'a> {
     pub fn is_out_of_date(&self) -> bool {
         self.status == PackageStatus::OutOfDate
     }
+
+    pub fn is_up_to_date(&self) -> bool {
+        self.status == PackageStatus::UpToDate
+    }
 }
 
 pub struct PackageUpdater<'a> {
@@ -128,6 +132,10 @@ impl<'a> PackageUpdater<'a> {
         let Ok(Some(package)) = self.check_package(package_name) else {
             return Ok(());
         };
+
+        if package.is_up_to_date() {
+            return Ok(());
+        }
 
         let local_package = package.package();
         let latest_version = package.latest_version.unwrap();

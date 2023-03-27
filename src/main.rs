@@ -38,6 +38,8 @@ enum Commands {
     Update {
         #[clap(name = "package", action, help = "Update a specific package")]
         package: Option<String>,
+        #[clap(short, long, action, help = "Use cached crates index")]
+        cached: bool,
     },
     #[clap(name = "check", about = "Check for updates")]
     Check {
@@ -76,7 +78,7 @@ struct App {
 
 fn main() -> anyhow::Result<()> {
     let app = App::parse();
-    let registry = CratesRegistry::new();
+    let mut registry = CratesRegistry::new();
 
     match app.command {
         Commands::Install {
@@ -109,7 +111,16 @@ fn main() -> anyhow::Result<()> {
 
         Commands::Update {
             package: specific_package,
+            cached,
         } => {
+            if !cached {
+                let progress_bar = indicatif::ProgressBar::new_spinner();
+                progress_bar.set_message("Updating crates index...");
+                progress_bar.enable_steady_tick(Duration::from_millis(100));
+                registry._update_index()?;
+                progress_bar.finish_and_clear();
+            }
+
             let packages = PackageTree::build()?;
             let updater = PackageUpdater::new(&registry, &packages);
 
