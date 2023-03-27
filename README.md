@@ -12,7 +12,7 @@ This project aims to provide a simple, easy to use, and reliable binary package 
 ## Installation
 
 ```
-cargo install capm --locked
+cargo install --locked capm
 ```
 
 **Or install from main branch**
