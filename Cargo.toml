@@ -1,6 +1,6 @@
 [package]
 name = "capm"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "A CLI tool to manage your binary crates"
 authors = ["Marco Quinten <splittydev@pm.me>"]
@@ -14,19 +14,19 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.70"
-clap = { version = "4.1.13", features = ["derive"] }
-crates-index = "0.19.7"
-crates-io = "0.35.1"
-curl = "0.4.44"
-home = "0.5.4"
-indicatif = "0.17.3"
-log = "0.4.17"
-owo-colors = "3.5.0"
-rayon = "1.7.0"
-regex = "1.7.2"
-semver = "1.0.17"
-serde = { version = "1.0.158", features = ["derive"] }
-termion = "2.0.1"
-textwrap = "0.16.0"
-toml = "0.7.3"
+anyhow = "1"
+clap = { version = "4.1", features = ["derive"] }
+crates-index = { version = "2", features = ["parallel", "git-performance", "git-https"] }
+crates-io = "0.38"
+curl = "0.4"
+home = "0.5"
+indicatif = "0.17"
+log = "0.4"
+owo-colors = "3.5"
+rayon = "1.7"
+regex = "1.7"
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+termion = "2"
+textwrap = "0.16"
+toml = "0.7"

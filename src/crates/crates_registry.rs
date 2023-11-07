@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use anyhow::Context;
-use crates_index::Index;
+use crates_index::GitIndex;
+use home::home_dir;
 use rayon::prelude::ParallelIterator;
 use regex::Regex;
 
@@ -10,14 +11,24 @@ use crate::Package;
 // const CRATES_IO_SPARSE_INDEX_URL: &str = "sparse+https://index.crates.io/";
 
 pub struct CratesRegistry {
-    index: Index,
+    index: GitIndex,
 }
 
 impl CratesRegistry {
     pub fn new() -> Self {
-        let index = Index::new_cargo_default().unwrap();
+        let index = Self::get_git_index().unwrap();
 
         Self { index }
+    }
+
+    fn get_git_index() -> Result<GitIndex, crates_index::Error> {
+        let Ok(index) = GitIndex::new_cargo_default() else {
+            eprintln!("Failed to get crates.io index, recloning...");
+            let index_dir = home_dir().unwrap().join(".cargo/registry/index");
+            std::fs::remove_dir_all(index_dir).unwrap();
+            return GitIndex::new_cargo_default()
+        };
+        Ok(index)
     }
 
     /// Update the crates.io index.
